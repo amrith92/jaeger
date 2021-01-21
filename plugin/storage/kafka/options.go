@@ -34,6 +34,8 @@ const (
 	EncodingProto = "protobuf"
 	// EncodingZipkinThrift is used for spans encoded as Zipkin Thrift.
 	EncodingZipkinThrift = "zipkin-thrift"
+	// EncodingZipkinJsonV2 is used for spans encoded as Zipkin JSON v2 format.
+	EncodingZipkinJsonV2 = "zipkin-json-v2"
 
 	configPrefix           = "kafka.producer"
 	suffixBrokers          = ".brokers"
@@ -62,7 +64,7 @@ const (
 
 var (
 	// AllEncodings is a list of all supported encodings.
-	AllEncodings = []string{EncodingJSON, EncodingProto, EncodingZipkinThrift}
+	AllEncodings = []string{EncodingJSON, EncodingProto, EncodingZipkinThrift, EncodingZipkinJsonV2}
 
 	//requiredAcks is mapping of sarama supported requiredAcks
 	requiredAcks = map[string]sarama.RequiredAcks{

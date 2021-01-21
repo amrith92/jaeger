@@ -40,7 +40,7 @@ func testMarshallerAndUnmarshaller(t *testing.T, marshaller Marshaller, unmarsha
 	resultSpan, err := unmarshaller.Unmarshal(bytes)
 
 	assert.NoError(t, err)
-	assert.Equal(t, sampleSpan, resultSpan)
+	assert.Equal(t, sampleSpan, resultSpan[0])
 }
 
 func TestZipkinThriftUnmarshaller(t *testing.T) {
@@ -58,7 +58,7 @@ func TestZipkinThriftUnmarshaller(t *testing.T) {
 	resultSpan, err := unmarshaller.Unmarshal(bytes)
 
 	assert.NoError(t, err)
-	assert.Equal(t, operationName, resultSpan.OperationName)
+	assert.Equal(t, operationName, resultSpan[0].OperationName)
 }
 
 func TestZipkinThriftUnmarshallerErrorNoService(t *testing.T) {

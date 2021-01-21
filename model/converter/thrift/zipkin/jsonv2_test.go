@@ -16,10 +16,8 @@ package zipkin
 
 import (
 	"fmt"
-	"io/ioutil"
 	"testing"
 
-	"github.com/go-openapi/swag"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -29,8 +27,8 @@ import (
 
 func TestFixtures(t *testing.T) {
 	var spans models.ListOfSpans
-	loadJSON(t, "fixtures/zipkin_01.json", &spans)
-	tSpans, err := spansV2ToThrift(spans)
+	loadJSON(t, "fixtures/zipkin_json_v2_01.json", &spans)
+	tSpans, err := SpansV2ToThrift(spans)
 	require.NoError(t, err)
 	assert.Equal(t, len(tSpans), 1)
 	var pid int64 = 1
@@ -52,8 +50,8 @@ func TestFixtures(t *testing.T) {
 
 func TestLCFromLocalEndpoint(t *testing.T) {
 	var spans models.ListOfSpans
-	loadJSON(t, "fixtures/zipkin_02.json", &spans)
-	tSpans, err := spansV2ToThrift(spans)
+	loadJSON(t, "fixtures/zipkin_json_v2_02.json", &spans)
+	tSpans, err := SpansV2ToThrift(spans)
 	fmt.Println(tSpans[0])
 	require.NoError(t, err)
 	assert.Equal(t, len(tSpans), 1)
@@ -140,15 +138,8 @@ func TestErrEndpoints(t *testing.T) {
 
 func TestErrSpans(t *testing.T) {
 	id := "z"
-	tSpans, err := spansV2ToThrift(models.ListOfSpans{&models.Span{ID: &id}})
+	tSpans, err := SpansV2ToThrift(models.ListOfSpans{&models.Span{ID: &id}})
 	require.Error(t, err)
 	require.Nil(t, tSpans)
 	assert.Equal(t, err.Error(), "strconv.ParseUint: parsing \"z\": invalid syntax")
-}
-
-func loadJSON(t *testing.T, fileName string, i interface{}) {
-	b, err := ioutil.ReadFile(fileName)
-	require.NoError(t, err)
-	err = swag.ReadJSON(b, i)
-	require.NoError(t, err, "Failed to parse json fixture file %s", fileName)
 }

@@ -18,6 +18,7 @@ import (
 	"crypto/rand"
 	"encoding/json"
 	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -134,4 +135,12 @@ func randBytesOfLen(n int) []byte {
 	b := make([]byte, n)
 	rand.Read(b)
 	return b
+}
+
+func loadJSON(t *testing.T, fileName string, i interface{}) {
+	jsonFile, err := os.Open(fileName)
+	require.NoError(t, err, "Failed to load json fixture file %s", fileName)
+	jsonParser := json.NewDecoder(jsonFile)
+	err = jsonParser.Decode(i)
+	require.NoError(t, err, "Failed to parse json fixture file %s", fileName)
 }

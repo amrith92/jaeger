@@ -15,12 +15,15 @@
 package zipkin
 
 import (
+	"errors"
 	"github.com/jaegertracing/jaeger/model"
 	"github.com/jaegertracing/jaeger/swagger-gen/models"
 	"github.com/jaegertracing/jaeger/thrift-gen/zipkincore"
+	"net"
 )
 
-func spansV2ToThrift(spans models.ListOfSpans) ([]*zipkincore.Span, error) {
+// SpansV2ToThrift converts JSON v2 format Zipkin spans to a Thrift representation
+func SpansV2ToThrift(spans models.ListOfSpans) ([]*zipkincore.Span, error) {
 	tSpans := make([]*zipkincore.Span, 0, len(spans))
 	for _, span := range spans {
 		tSpan, err := spanV2ToThrift(span)
@@ -193,4 +196,70 @@ func tagsToThrift(tags models.Tags, localE *zipkincore.Endpoint) []*zipkincore.B
 		bAnnos = append(bAnnos, ba)
 	}
 	return bAnnos
+}
+
+// id can be padded with zeros. We let it fail later in case it's longer than 32
+func cutLongID(id string) string {
+	l := len(id)
+	if l > 16 && l <= 32 {
+		start := l - 16
+		return id[start:]
+	}
+	return id
+}
+
+func eToThrift(ip4 string, ip6 string, p int32, service string) (*zipkincore.Endpoint, error) {
+	ipv4, err := parseIpv4(ip4)
+	if err != nil {
+		return nil, err
+	}
+	port := port(p)
+	ipv6, err := parseIpv6(string(ip6))
+	if err != nil {
+		return nil, err
+	}
+	return &zipkincore.Endpoint{
+		ServiceName: service,
+		Port:        int16(port),
+		Ipv4:        ipv4,
+		Ipv6:        ipv6,
+	}, nil
+}
+
+func port(p int32) int32 {
+	if p >= (1 << 15) {
+		// Zipkin.thrift defines port as i16, so values between (2^15 and 2^16-1) must be encoded as negative
+		p = p - (1 << 16)
+	}
+	return p
+}
+
+func parseIpv6(str string) (net.IP, error) {
+	if str == "" {
+		return nil, nil
+	}
+	ip := net.ParseIP(str).To16()
+	if ip == nil {
+		return nil, errors.New("wrong ipv6")
+	}
+	return ip, nil
+}
+
+func parseIpv4(str string) (int32, error) {
+	if str == "" {
+		return 0, nil
+	}
+
+	ip := net.ParseIP(str).To4()
+	if ip == nil {
+		return 0, errors.New("wrong ipv4")
+	}
+
+	var ipv4 int32
+	for _, segment := range ip {
+		parsed32 := int32(segment)
+		ipv4 = ipv4<<8 | (parsed32 & 0xff)
+	}
+
+	return ipv4, nil
 }

@@ -17,7 +17,6 @@ package zipkin
 
 import (
 	"github.com/apache/thrift/lib/go/thrift"
-
 	"github.com/jaegertracing/jaeger/thrift-gen/zipkincore"
 )
 

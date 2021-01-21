@@ -42,11 +42,11 @@ func TestSpanProcessor_Process(t *testing.T) {
 
 	message := &cmocks.Message{}
 	data := []byte("police")
-	span := &model.Span{}
+	spans := []*model.Span{{}}
 
 	message.On("Value").Return(data)
-	unmarshallerMock.On("Unmarshal", data).Return(span, nil)
-	writer.On("WriteSpan", context.Background(), span).Return(nil)
+	unmarshallerMock.On("Unmarshal", data).Return(spans, nil)
+	writer.On("WriteSpan", context.Background(), spans[0]).Return(nil)
 
 	assert.Nil(t, processor.Process(message))
 
