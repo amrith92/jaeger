@@ -33,7 +33,7 @@ import (
 
 	"github.com/jaegertracing/jaeger/cmd/collector/app/handler"
 	"github.com/jaegertracing/jaeger/cmd/collector/app/processor"
-	"github.com/jaegertracing/jaeger/model/converter/thrift/zipkin"
+	zipkinThrift "github.com/jaegertracing/jaeger/model/converter/thrift/zipkin"
 	zipkinProto "github.com/jaegertracing/jaeger/proto-gen/zipkin"
 	"github.com/jaegertracing/jaeger/swagger-gen/models"
 	"github.com/jaegertracing/jaeger/swagger-gen/restapi"
@@ -93,7 +93,7 @@ func (aH *APIHandler) saveSpans(w http.ResponseWriter, r *http.Request) {
 	var tSpans []*zipkincore.Span
 	switch contentType {
 	case "application/x-thrift":
-		tSpans, err = zipkin.DeserializeThrift(bodyBytes)
+		tSpans, err = zipkinThrift.DeserializeThrift(bodyBytes)
 	case "application/json":
 		tSpans, err = DeserializeJSON(bodyBytes)
 	default:
@@ -173,7 +173,7 @@ func jsonToThriftSpansV2(bodyBytes []byte, zipkinV2Formats strfmt.Registry) ([]*
 		return nil, err
 	}
 
-	tSpans, err := spansV2ToThrift(spans)
+	tSpans, err := zipkinThrift.SpansV2ToThrift(spans)
 	if err != nil {
 		return nil, err
 	}

@@ -39,6 +39,8 @@ func CreateConsumer(logger *zap.Logger, metricsFactory metrics.Factory, spanWrit
 		unmarshaller = kafka.NewProtobufUnmarshaller()
 	case kafka.EncodingZipkinThrift:
 		unmarshaller = kafka.NewZipkinThriftUnmarshaller()
+	case kafka.EncodingZipkinJsonV2:
+		unmarshaller = kafka.NewZipkinJsonV2Unmarshaller()
 	default:
 		return nil, fmt.Errorf(`encoding '%s' not recognised, use one of ("%s")`,
 			options.Encoding, strings.Join(kafka.AllEncodings, "\", \""))

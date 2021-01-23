@@ -16,6 +16,8 @@ package kafka
 
 import (
 	"bytes"
+	"encoding/json"
+	"github.com/jaegertracing/jaeger/swagger-gen/models"
 
 	"github.com/gogo/protobuf/jsonpb"
 	"github.com/gogo/protobuf/proto"
@@ -26,7 +28,7 @@ import (
 
 // Unmarshaller decodes a byte array to a span
 type Unmarshaller interface {
-	Unmarshal([]byte) (*model.Span, error)
+	Unmarshal([]byte) ([]*model.Span, error)
 }
 
 // ProtobufUnmarshaller implements Unmarshaller
@@ -38,10 +40,11 @@ func NewProtobufUnmarshaller() *ProtobufUnmarshaller {
 }
 
 // Unmarshal decodes a protobuf byte array to a span
-func (h *ProtobufUnmarshaller) Unmarshal(msg []byte) (*model.Span, error) {
+func (h *ProtobufUnmarshaller) Unmarshal(msg []byte) ([]*model.Span, error) {
 	newSpan := &model.Span{}
 	err := proto.Unmarshal(msg, newSpan)
-	return newSpan, err
+	spans := []*model.Span{newSpan}
+	return spans, err
 }
 
 // JSONUnmarshaller implements Unmarshaller
@@ -53,22 +56,23 @@ func NewJSONUnmarshaller() *JSONUnmarshaller {
 }
 
 // Unmarshal decodes a json byte array to a span
-func (h *JSONUnmarshaller) Unmarshal(msg []byte) (*model.Span, error) {
+func (h *JSONUnmarshaller) Unmarshal(msg []byte) ([]*model.Span, error) {
 	newSpan := &model.Span{}
 	err := jsonpb.Unmarshal(bytes.NewReader(msg), newSpan)
-	return newSpan, err
+	spans := []*model.Span{newSpan}
+	return spans, err
 }
 
 // ZipkinThriftUnmarshaller implements Unmarshaller
 type ZipkinThriftUnmarshaller struct{}
 
-// NewZipkinThriftUnmarshaller constructs a zipkinThriftUnmarshaller
+// NewZipkinThriftUnmarshaller constructs a ZipkinThriftUnmarshaller
 func NewZipkinThriftUnmarshaller() *ZipkinThriftUnmarshaller {
 	return &ZipkinThriftUnmarshaller{}
 }
 
 // Unmarshal decodes a json byte array to a span
-func (h *ZipkinThriftUnmarshaller) Unmarshal(msg []byte) (*model.Span, error) {
+func (h *ZipkinThriftUnmarshaller) Unmarshal(msg []byte) ([]*model.Span, error) {
 	tSpans, err := zipkin.DeserializeThrift(msg)
 	if err != nil {
 		return nil, err
@@ -77,5 +81,40 @@ func (h *ZipkinThriftUnmarshaller) Unmarshal(msg []byte) (*model.Span, error) {
 	if err != nil {
 		return nil, err
 	}
-	return mSpans[0], err
+	return mSpans, err
+}
+
+// ZipkinJsonV2Unmarshaller implements Unmarshaller
+type ZipkinJsonV2Unmarshaller struct{}
+
+// NewZipkinJsonV2Unmarshaller constructs a ZipkinJsonV2Unmarshaller
+func NewZipkinJsonV2Unmarshaller() *ZipkinJsonV2Unmarshaller {
+	return &ZipkinJsonV2Unmarshaller{}
+}
+
+// Unmarshal decodes json v2 format data to a span
+func (h *ZipkinJsonV2Unmarshaller) Unmarshal(msg []byte) ([]*model.Span, error) {
+	var j2Spans []*models.Span
+	err := json.Unmarshal(msg, &j2Spans)
+	if err != nil {
+		return nil, err
+	}
+
+	tSpans, err := zipkin.SpansV2ToThrift(j2Spans)
+	if err != nil {
+		return nil, err
+	}
+
+	spans := make([]*model.Span, 0)
+	for _, tSpan := range tSpans {
+		mSpans, err := zipkin.ToDomainSpan(tSpan)
+		if err != nil {
+			return nil, err
+		}
+		for _, span := range mSpans {
+			spans = append(spans, span)
+		}
+	}
+
+	return spans, nil
 }

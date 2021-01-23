@@ -17,6 +17,7 @@ package zipkin
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/jaegertracing/jaeger/swagger-gen/models"
 	"net"
 
 	model "github.com/jaegertracing/jaeger/model"
@@ -195,4 +196,18 @@ func protoAnnoV2ToThrift(a *zipkinProto.Annotation, e *zipkincore.Endpoint) *zip
 		Timestamp: int64(a.Timestamp),
 		Host:      e,
 	}
+}
+
+func tagsToThrift(tags models.Tags, localE *zipkincore.Endpoint) []*zipkincore.BinaryAnnotation {
+	bAnnos := make([]*zipkincore.BinaryAnnotation, 0, len(tags))
+	for k, v := range tags {
+		ba := &zipkincore.BinaryAnnotation{
+			Key:            k,
+			Value:          []byte(v),
+			AnnotationType: zipkincore.AnnotationType_STRING,
+			Host:           localE,
+		}
+		bAnnos = append(bAnnos, ba)
+	}
+	return bAnnos
 }
